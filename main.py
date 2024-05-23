@@ -11,20 +11,57 @@ def setup_window(root):
 
 class Playfield:
     def __init__(self):
+        self.pressed = {}
         self._create_ui()
+
+    def start(self):
+        self._animate()
         setup_window(self.root)
+        self.root.mainloop()
 
     def _create_ui(self):
         self.root = Tk()
-        self.canvas = Canvas(self.root, width=900, height=500, bg="black")
+        self.canvas = Canvas(width=900, height=500, bg="black")
         self.root.resizable(width=False, height=False)
-        self.root.update_idletasks()
         self.canvas.pack()
         self.p1 = Paddle(self.canvas, "p1", "yellow", 30, 250, 30, 420, 30, 470)
         self.p2 = Paddle(self.canvas, "p2", "blue", 870, 250, 480, 870, 30, 470)
 
-    def start(self):
-        self.root.mainloop()
+        self._set_bindings()
+
+    def _animate(self):
+        if self.pressed["w"]:
+            self.p1.move_up()
+        if self.pressed["s"]:
+            self.p1.move_down()
+        if self.pressed["a"]:
+            self.p1.move_left()
+        if self.pressed["d"]:
+            self.p1.move_right()
+        if self.pressed["i"]:
+            self.p2.move_up()
+        if self.pressed["k"]:
+            self.p2.move_down()
+        if self.pressed["j"]:
+            self.p2.move_left()
+        if self.pressed["l"]:
+            self.p2.move_right()
+
+        self.p1.redraw()
+        self.p2.redraw()
+        self.root.after(10, self._animate)
+
+    def _set_bindings(self):
+        for char in ["w", "s", "a", "d", "i", "k", "j", "l"]:
+            self.root.bind(f"<KeyPress-{char}>", self._pressed)
+            self.root.bind(f"<KeyRelease-{char}>", self._released)
+            self.pressed[char] = False
+
+    def _pressed(self, event):
+        self.pressed[event.char] = True
+
+    def _released(self, event):
+        self.pressed[event.char] = False
 
 class Paddle:
     def __init__(self, canvas, tag, color, x=0, y=0, left_boundary=0, right_boundary=900, top_boundary=0, bottom_boundary=500):
@@ -38,6 +75,18 @@ class Paddle:
         self.top_boundary = top_boundary
         self.bottom_boundary = bottom_boundary
         self.redraw()
+
+    def move_left(self):
+        self.x = max(self.x - 4, self.left_boundary)
+
+    def move_right(self):
+        self.x = min(self.x + 4, self.right_boundary)
+
+    def move_up(self):
+        self.y = max(self.y - 4, self.top_boundary)
+
+    def move_down(self):
+        self.y = min(self.y + 4, self.bottom_boundary)
 
     def redraw(self):
         x0 = self.x - 30
