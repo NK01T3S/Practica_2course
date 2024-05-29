@@ -26,6 +26,7 @@ class Playfield:
         self.canvas.pack()
         self.p1 = Paddle(self.canvas, "p1", "yellow", 30, 250, 30, 420, 30, 470)
         self.p2 = Paddle(self.canvas, "p2", "blue", 870, 250, 480, 870, 30, 470)
+        self.ball = Ball(self.canvas, "ball", "red", 450, 250)
 
         self._set_bindings()
 
@@ -47,8 +48,11 @@ class Playfield:
         if self.pressed["l"]:
             self.p2.move_right()
 
+        self.ball.move()
+
         self.p1.redraw()
         self.p2.redraw()
+        self.ball.redraw()
         self.root.after(10, self._animate)
 
     def _set_bindings(self):
@@ -93,6 +97,45 @@ class Paddle:
         x1 = self.x + 30
         y0 = self.y - 30
         y1 = self.y + 30
+        self.canvas.delete(self.tag)
+        self.canvas.create_rectangle(x0, y0, x1, y1, tags=self.tag, fill=self.color)
+
+class Ball:
+    def __init__(self, canvas, tag, color="green", x=0, y=0):
+        self.canvas = canvas
+        self.tag = tag
+        self.x = x
+        self.y = y
+        self.color = color
+        self.vx = 3
+        self.vy = 3
+        self.radius = 10
+        self.redraw()
+
+    def move(self):
+        self.x += self.vx
+        self.y += self.vy
+
+        if self.x < -10 or self.x > 870:
+            self.vx = -self.vx
+
+        if self.y < -10 or self.y > 470:
+            self.vy = -self.vy
+
+    def bounce_horizontal(self):
+        self.vx = -self.vx
+
+    def reset_position(self):
+        self.x = 450
+        self.y = 250
+        self.vx = 3
+        self.vy = 3
+
+    def redraw(self):
+        x0 = self.x - self.radius
+        x1 = self.x + self.radius
+        y0 = self.y - self.radius
+        y1 = self.y + self.radius
         self.canvas.delete(self.tag)
         self.canvas.create_rectangle(x0, y0, x1, y1, tags=self.tag, fill=self.color)
 
