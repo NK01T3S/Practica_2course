@@ -27,6 +27,8 @@ class Playfield:
         self.p1 = Paddle(self.canvas, "p1", "yellow", 30, 250, 30, 420, 30, 470)
         self.p2 = Paddle(self.canvas, "p2", "blue", 870, 250, 480, 870, 30, 470)
         self.ball = Ball(self.canvas, "ball", "red", 450, 250)
+        self.gate_left = Gate(self.canvas, "gate_left", "white", 5, 250, 100, 300, 100, 450)
+        self.gate_right = Gate(self.canvas, "gate_right", "white", 895, 250, 750, 300, 750, 450)
 
         self._set_bindings()
 
@@ -53,6 +55,8 @@ class Playfield:
         self.p1.redraw()
         self.p2.redraw()
         self.ball.redraw()
+        self.gate_left.redraw()
+        self.gate_right.redraw()
         self.root.after(10, self._animate)
 
     def _set_bindings(self):
@@ -122,13 +126,16 @@ class Ball:
         if self.y < -10 or self.y > 470:
             self.vy = -self.vy
 
+        if self.x < 30 or self.x > 870:
+            self.reset_position()
+
     def bounce_horizontal(self):
         self.vx = -self.vx
 
     def reset_position(self):
         self.x = 450
         self.y = 250
-        self.vx = 3
+        self.vx = -3
         self.vy = 3
 
     def redraw(self):
@@ -136,6 +143,27 @@ class Ball:
         x1 = self.x + self.radius
         y0 = self.y - self.radius
         y1 = self.y + self.radius
+        self.canvas.delete(self.tag)
+        self.canvas.create_rectangle(x0, y0, x1, y1, tags=self.tag, fill=self.color)
+
+class Gate:
+    def __init__(self, canvas, tag, color, x=0, y=0, left_boundary=0, right_boundary=900, top_boundary=0, bottom_boundary=500):
+        self.canvas = canvas
+        self.tag = tag
+        self.x = x
+        self.y = y
+        self.color = color
+        self.left_boundary = left_boundary
+        self.right_boundary = right_boundary
+        self.top_boundary = top_boundary
+        self.bottom_boundary = bottom_boundary
+        self.redraw()
+
+    def redraw(self):
+        x0 = self.x - 5
+        x1 = self.x + 5
+        y0 = self.y - 100
+        y1 = self.y + 100
         self.canvas.delete(self.tag)
         self.canvas.create_rectangle(x0, y0, x1, y1, tags=self.tag, fill=self.color)
 
