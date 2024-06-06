@@ -12,6 +12,8 @@ def setup_window(root):
 class Playfield:
     def __init__(self):
         self.pressed = {}
+        self.p1_score = 0
+        self.p2_score = 0
         self._create_ui()
 
     def start(self):
@@ -26,7 +28,7 @@ class Playfield:
         self.canvas.pack()
         self.p1 = Paddle(self.canvas, "p1", "yellow", 30, 250, 30, 420, 30, 470)
         self.p2 = Paddle(self.canvas, "p2", "blue", 870, 250, 480, 870, 30, 470)
-        self.ball = Ball(self.canvas, "ball", "red", 450, 250)
+        self.ball = Ball(self.canvas, "ball", self.p1_score, self.p2_score, "red", 450, 250)
         self.gate_left = Gate(self.canvas, "gate_left", "white", 5, 250, 100, 300, 100, 450)
         self.gate_right = Gate(self.canvas, "gate_right", "white", 895, 250, 750, 300, 750, 450)
 
@@ -57,6 +59,9 @@ class Playfield:
         self.ball.redraw()
         self.gate_left.redraw()
         self.gate_right.redraw()
+        self.canvas.delete("score")
+        self.canvas.create_text(450, 50, text=f"{self.ball.p1_score}     {self.ball.p2_score}", tags="score",
+                                fill="white", font=("Arial", 20))
         self.root.after(10, self._animate)
 
     def _set_bindings(self):
@@ -105,9 +110,11 @@ class Paddle:
         self.canvas.create_rectangle(x0, y0, x1, y1, tags=self.tag, fill=self.color)
 
 class Ball:
-    def __init__(self, canvas, tag, color="green", x=0, y=0):
+    def __init__(self, canvas, tag, p1_score, p2_score, color="green", x=0, y=0):
         self.canvas = canvas
         self.tag = tag
+        self.p1_score = p1_score
+        self.p2_score = p2_score
         self.x = x
         self.y = y
         self.color = color
@@ -126,17 +133,29 @@ class Ball:
         if self.y < -10 or self.y > 470:
             self.vy = -self.vy
 
-        if self.x < 30 or self.x > 870:
+        if self.x < 30:
+            self.p2_score += 1
+            self.reset_position()
+        elif self.x > 870:
+            self.p1_score += 1
             self.reset_position()
 
     def bounce_horizontal(self):
         self.vx = -self.vx
 
     def reset_position(self):
-        self.x = 450
-        self.y = 250
-        self.vx = -3
-        self.vy = 3
+        if self.x < 30:
+            self.x = 350
+            self.y = 250
+        elif self.x > 870:
+            self.x = 550
+            self.y = 250
+        self.vx = -self.vx
+        self.vy = -self.vy
+
+        self.canvas.delete("score")
+        self.canvas.create_text(450, 50, text=f"{self.p1_score}     {self.p2_score}", tags="score",
+                                fill="white", font=("Arial", 20))
 
     def redraw(self):
         x0 = self.x - self.radius
