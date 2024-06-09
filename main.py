@@ -9,6 +9,38 @@ def setup_window(root):
     y = (screen_height // 2) - (window_height // 2)
     root.geometry(f'{window_width}x{window_height}+{x}+{y}')
 
+class MeinMenu:
+    def __init__(self):
+        self.root = Tk()
+        self.root.title("MeinMenu")
+        self.play_button = Button(self.root, text="ИГРАТЬ", command=self.start_game, padx=80, pady=20)
+        self.play_button.pack(pady=50)
+        self.control_button = Button(self.root, text="УПРАВЛЕНИЕ", command=self.show_controls, padx=60, pady=20)
+        self.control_button.pack(pady=50)
+        self.exit_button = Button(self.root, text="ВЫХОД", command=self.exit_program, padx=80, pady=20)
+        self.exit_button.pack(pady=50)
+        setup_window(self.root)
+        self.root.resizable(width=False, height=False)
+        self.root.mainloop()
+
+    def start_game(self):
+        self.root.destroy()
+        p = Playfield()
+        p.root.focus_force()
+        p.start()
+
+    def show_controls(self):
+        controls_window = Toplevel(self.root)
+        controls_window.title("Управление")
+        controls_text = "Управление:\n\nИгрок 1:\nW - вверх\nS - вниз\nA - влево\nD - вправо\n\nИгрок 2:\nI - вверх\nK - вниз\nJ - влево\nL - вправо"
+        controls_label = Label(controls_window, text=controls_text, font=("Arial", 14))
+        controls_label.pack(padx=20, pady=20)
+        controls_close_button = Button(controls_window, text="Закрыть", command=controls_window.destroy)
+        controls_close_button.pack()
+
+    def exit_program(self):
+        self.root.destroy()
+
 class Playfield:
     def __init__(self):
         self.pressed = {}
@@ -188,5 +220,4 @@ class Gate:
 
 
 if __name__ == '__main__':
-    p = Playfield()
-    p.start()
+    MeinMenu()
