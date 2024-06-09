@@ -31,12 +31,19 @@ class MeinMenu:
 
     def show_controls(self):
         controls_window = Toplevel(self.root)
+        setup_window(controls_window)
+        controls_window.resizable(width=False, height=False)
         controls_window.title("Управление")
+
         controls_text = "Управление:\n\nИгрок 1:\nW - вверх\nS - вниз\nA - влево\nD - вправо\n\nИгрок 2:\nI - вверх\nK - вниз\nJ - влево\nL - вправо"
         controls_label = Label(controls_window, text=controls_text, font=("Arial", 14))
         controls_label.pack(padx=20, pady=20)
-        controls_close_button = Button(controls_window, text="Закрыть", command=controls_window.destroy)
-        controls_close_button.pack()
+
+        controls_close_button = Button(controls_window, text="Закрыть",
+                                       command=lambda: [controls_window.destroy(), self.root.deiconify()])
+        controls_close_button.pack(pady=60)
+
+        self.root.withdraw()
 
     def exit_program(self):
         self.root.destroy()
@@ -47,6 +54,7 @@ class Playfield:
         self.p1_score = 0
         self.p2_score = 0
         self._create_ui()
+        self.winner_window = None
 
     def start(self):
         self._animate()
@@ -58,6 +66,8 @@ class Playfield:
         self.canvas = Canvas(width=900, height=500, bg="black")
         self.root.resizable(width=False, height=False)
         self.canvas.pack()
+        self.menu_button = Button(self.root, text="<-", command=self.go_to_main_menu, padx=20, pady=10)
+        self.menu_button.place(x=20, y=20)
         self.p1 = Paddle(self.canvas, "p1", "yellow", 30, 250, 30, 420, 30, 470)
         self.p2 = Paddle(self.canvas, "p2", "blue", 870, 250, 480, 870, 30, 470)
         self.ball = Ball(self.canvas, "ball", self.p1_score, self.p2_score, "red", 450, 250)
@@ -94,7 +104,40 @@ class Playfield:
         self.canvas.delete("score")
         self.canvas.create_text(450, 50, text=f"{self.ball.p1_score}     {self.ball.p2_score}", tags="score",
                                 fill="white", font=("Arial", 20))
-        self.root.after(10, self._animate)
+
+        if self.ball.p1_score >= 10 or self.ball.p2_score >= 10:
+            self.show_winner()
+        else:
+            self.root.after(10, self._animate)
+
+    def show_winner(self):
+        self.winner_window = Toplevel(self.root)
+        self.winner_window.title("Победа!")
+
+        screen_width = self.winner_window.winfo_screenwidth()
+        screen_height = self.winner_window.winfo_screenheight()
+        window_width = 300
+        window_height = 200
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+        self.winner_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+        self.winner_window.resizable(width=False, height=False)
+        if self.ball.p1_score >= 10:
+            winner_text = "Игрок 1 победил!"
+        else:
+            winner_text = "Игрок 2 победил!"
+        winner_label = Label(self.winner_window, text=winner_text, font=("Arial", 20))
+        winner_label.pack(padx=20, pady=20)
+        restart_button = Button(self.winner_window, text="Перезапуск", command=self.restart_game)
+        restart_button.pack(pady=10)
+        main_menu_button = Button(self.winner_window, text="Главное меню", command=self.go_to_main_menu)
+        main_menu_button.pack(pady=10)
+
+    def restart_game(self):
+        self.root.destroy()
+        new_game = Playfield()
+        new_game.start()
 
     def _set_bindings(self):
         for char in ["w", "s", "a", "d", "i", "k", "j", "l"]:
@@ -107,6 +150,10 @@ class Playfield:
 
     def _released(self, event):
         self.pressed[event.char] = False
+
+    def go_to_main_menu(self):
+        self.root.destroy()
+        MeinMenu()
 
 class Paddle:
     def __init__(self, canvas, tag, color, x=0, y=0, left_boundary=0, right_boundary=900, top_boundary=0, bottom_boundary=500):
@@ -150,8 +197,8 @@ class Ball:
         self.x = x
         self.y = y
         self.color = color
-        self.vx = 3
-        self.vy = 3
+        self.vx = 5
+        self.vy = 5
         self.radius = 10
         self.redraw()
 
