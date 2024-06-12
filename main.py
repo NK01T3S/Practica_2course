@@ -94,6 +94,13 @@ class Playfield:
         if self.pressed["l"]:
             self.p2.move_right()
 
+        if self.ball.check_horizontal_collision(self.p1) or self.ball.check_horizontal_collision(self.p2):
+            self.ball.bounce_horizontal()
+        if self.ball.check_vertical_collision(self.p1) or self.ball.check_vertical_collision(self.p2):
+            self.ball.bounce_vertical()
+        self.ball.check_paddle_collision(self.p1)
+        self.ball.check_paddle_collision(self.p2)
+
         self.ball.move()
 
         self.p1.redraw()
@@ -136,8 +143,9 @@ class Playfield:
 
     def restart_game(self):
         self.root.destroy()
-        new_game = Playfield()
-        new_game.start()
+        p = Playfield()
+        p.root.focus_force()
+        p.start()
 
     def _set_bindings(self):
         for char in ["w", "s", "a", "d", "i", "k", "j", "l"]:
@@ -168,17 +176,17 @@ class Paddle:
         self.bottom_boundary = bottom_boundary
         self.redraw()
 
-    def move_left(self):
-        self.x = max(self.x - 4, self.left_boundary)
-
-    def move_right(self):
-        self.x = min(self.x + 4, self.right_boundary)
-
     def move_up(self):
-        self.y = max(self.y - 4, self.top_boundary)
+        self.y = max(self.y - 3, self.top_boundary)
 
     def move_down(self):
-        self.y = min(self.y + 4, self.bottom_boundary)
+        self.y = min(self.y + 3, self.bottom_boundary)
+
+    def move_left(self):
+        self.x = max(self.x - 3, self.left_boundary)
+
+    def move_right(self):
+        self.x = min(self.x + 3, self.right_boundary)
 
     def redraw(self):
         x0 = self.x - 30
@@ -201,10 +209,14 @@ class Ball:
         self.vy = 5
         self.radius = 10
         self.redraw()
+        self.friction = 0.98
 
     def move(self):
         self.x += self.vx
         self.y += self.vy
+
+        self.vx *= self.friction
+        self.vy *= self.friction
 
         if self.x < -10 or self.x > 870:
             self.vx = -self.vx
@@ -219,8 +231,76 @@ class Ball:
             self.p1_score += 1
             self.reset_position()
 
+    def check_horizontal_collision(self, paddle):
+        x0_paddle = paddle.x - 30
+        x1_paddle = paddle.x + 30
+        y0_paddle = paddle.y - 20
+        y1_paddle = paddle.y + 20
+
+        if (x0_paddle < self.x + self.radius < x1_paddle or
+            x0_paddle < self.x - self.radius < x1_paddle) and \
+                (y0_paddle < self.y + self.radius < y1_paddle or
+                 y0_paddle < self.y - self.radius < y1_paddle):
+            return True
+
+        return False
+
+    def check_vertical_collision(self, paddle):
+        x0_paddle = paddle.x - 30
+        x1_paddle = paddle.x + 30
+        y0_paddle = paddle.y - 20
+        y1_paddle = paddle.y + 20
+
+        if (x0_paddle < self.x < x1_paddle) and \
+                ((y0_paddle < self.y + self.radius < y1_paddle) or
+                 (y0_paddle < self.y - self.radius < y1_paddle)):
+            return True
+
+        return False
+
     def bounce_horizontal(self):
         self.vx = -self.vx
+        if abs(self.vx) < 10:
+            if self.vx > 0:
+                self.vx = 10
+            else:
+                self.vx = -10
+        self.vy *= 1.05
+
+    def bounce_vertical(self):
+        self.vy = -self.vy
+        if abs(self.vy) < 10:
+            if self.vy > 0:
+                self.vy = 10
+            else:
+                self.vy = -10
+        self.vx *= 1.05
+
+    def check_paddle_collision(self, paddle):
+        x0_paddle = paddle.x - 30
+        x1_paddle = paddle.x + 30
+        y0_paddle = paddle.y - 20
+        y1_paddle = paddle.y + 20
+
+        if (x0_paddle < self.x < x1_paddle) and (y0_paddle < self.y < y1_paddle):
+            if self.x < paddle.x:
+                self.x = x0_paddle - self.radius
+            elif self.x > paddle.x:
+                self.x = x1_paddle + self.radius
+            if self.y < paddle.y:
+                self.y = y0_paddle - self.radius
+            elif self.y > paddle.y:
+                self.y = y1_paddle + self.radius
+
+            if self.x < paddle.x:
+                self.bounce_horizontal()
+            elif self.x > paddle.x:
+                self.bounce_horizontal()
+
+            if self.y < paddle.y:
+                self.bounce_vertical()
+            elif self.y > paddle.y:
+                self.bounce_vertical()
 
     def reset_position(self):
         if self.x < 30:
