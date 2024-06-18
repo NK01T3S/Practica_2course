@@ -70,7 +70,7 @@ class Playfield:
         self.menu_button.place(x=20, y=20)
         self.p1 = Paddle(self.canvas, "p1", "yellow", 30, 250, 30, 420, 30, 470)
         self.p2 = Paddle(self.canvas, "p2", "blue", 870, 250, 480, 870, 30, 470)
-        self.ball = Ball(self.canvas, "ball", self.p1_score, self.p2_score, "red", 450, 250)
+        self.ball = Ball(self.canvas, "ball", self.p1_score, self.p2_score, self.p1, self.p2, "red", 450, 250, 20)
         self.gate_left = Gate(self.canvas, "gate_left", "white", 5, 250, 100, 300, 100, 450)
         self.gate_right = Gate(self.canvas, "gate_right", "white", 895, 250, 750, 300, 750, 450)
 
@@ -85,6 +85,14 @@ class Playfield:
             self.p1.move_left()
         if self.pressed["d"]:
             self.p1.move_right()
+        if self.pressed["W"]:
+            self.p1.move_up()
+        if self.pressed["S"]:
+            self.p1.move_down()
+        if self.pressed["A"]:
+            self.p1.move_left()
+        if self.pressed["D"]:
+            self.p1.move_right()
         if self.pressed["i"]:
             self.p2.move_up()
         if self.pressed["k"]:
@@ -92,6 +100,14 @@ class Playfield:
         if self.pressed["j"]:
             self.p2.move_left()
         if self.pressed["l"]:
+            self.p2.move_right()
+        if self.pressed["I"]:
+            self.p2.move_up()
+        if self.pressed["K"]:
+            self.p2.move_down()
+        if self.pressed["J"]:
+            self.p2.move_left()
+        if self.pressed["L"]:
             self.p2.move_right()
 
         if self.ball.check_horizontal_collision(self.p1) or self.ball.check_horizontal_collision(self.p2):
@@ -148,7 +164,7 @@ class Playfield:
         p.start()
 
     def _set_bindings(self):
-        for char in ["w", "s", "a", "d", "i", "k", "j", "l"]:
+        for char in ["w", "s", "a", "d", "i", "k", "j", "l", "W", "S", "A", "D", "I", "K", "J", "L"]:
             self.root.bind(f"<KeyPress-{char}>", self._pressed)
             self.root.bind(f"<KeyRelease-{char}>", self._released)
             self.pressed[char] = False
@@ -175,18 +191,24 @@ class Paddle:
         self.top_boundary = top_boundary
         self.bottom_boundary = bottom_boundary
         self.redraw()
+        self.vx = 0
+        self.vy = 0
 
     def move_up(self):
-        self.y = max(self.y - 3, self.top_boundary)
+        self.y = max(self.y - 8, self.top_boundary)
+        self.vy = -8
 
     def move_down(self):
-        self.y = min(self.y + 3, self.bottom_boundary)
+        self.y = min(self.y + 8, self.bottom_boundary)
+        self.vy = 8
 
     def move_left(self):
-        self.x = max(self.x - 3, self.left_boundary)
+        self.x = max(self.x - 8, self.left_boundary)
+        self.vx = -8
 
     def move_right(self):
-        self.x = min(self.x + 3, self.right_boundary)
+        self.x = min(self.x + 8, self.right_boundary)
+        self.vx = 8
 
     def redraw(self):
         x0 = self.x - 30
@@ -197,19 +219,27 @@ class Paddle:
         self.canvas.create_rectangle(x0, y0, x1, y1, tags=self.tag, fill=self.color)
 
 class Ball:
-    def __init__(self, canvas, tag, p1_score, p2_score, color="green", x=0, y=0):
+    def __init__(self, canvas, tag, p1_score, p2_score, p1, p2, color="green", x=0, y=0, radius=20):
         self.canvas = canvas
         self.tag = tag
         self.p1_score = p1_score
         self.p2_score = p2_score
+        self.p1 = p1
+        self.p2 = p2
         self.x = x
         self.y = y
         self.color = color
-        self.vx = 5
-        self.vy = 5
-        self.radius = 10
+        self.vx = 2
+        self.vy = 2
+        self.radius = radius
         self.redraw()
         self.friction = 0.98
+        self.get_paddle_speed(self.p1)
+        self.get_paddle_speed(self.p2)
+
+    def get_paddle_speed(self, paddle):
+        self.vx_paddle = paddle.vx
+        self.vy_paddle = paddle.vy
 
     def move(self):
         self.x += self.vx
@@ -218,18 +248,27 @@ class Ball:
         self.vx *= self.friction
         self.vy *= self.friction
 
-        if self.x < -10 or self.x > 870:
-            self.vx = -self.vx
-
-        if self.y < -10 or self.y > 470:
-            self.vy = -self.vy
+        if self.x - self.radius < 0:
+            self.vx = abs(self.vx)
+        elif self.x + self.radius > 900:
+            self.vx = -abs(self.vx)
+        if self.y - self.radius < 0:
+            self.vy = abs(self.vy)
+        elif self.y + self.radius > 500:
+            self.vy = -abs(self.vy)
 
         if self.x < 30:
-            self.p2_score += 1
-            self.reset_position()
+            if self.y >= 100 and self.y <= 400:
+                self.p2_score += 1
+                self.reset_position()
+            else:
+                self.vx = abs(self.vx)
         elif self.x > 870:
-            self.p1_score += 1
-            self.reset_position()
+            if self.y >= 100 and self.y <= 400:
+                self.p1_score += 1
+                self.reset_position()
+            else:
+                self.vx = -abs(self.vx)
 
     def check_horizontal_collision(self, paddle):
         x0_paddle = paddle.x - 30
@@ -241,9 +280,13 @@ class Ball:
             x0_paddle < self.x - self.radius < x1_paddle) and \
                 (y0_paddle < self.y + self.radius < y1_paddle or
                  y0_paddle < self.y - self.radius < y1_paddle):
+            if self.vx > 0 and paddle.vx > 0:
+                self.vx = abs(self.vx) + abs(paddle.vx)
+            elif self.vx < 0 and paddle.vx < 0:
+                self.vx = -(abs(self.vx) + abs(paddle.vx))
+            else:
+                self.vx = -self.vx
             return True
-
-        return False
 
     def check_vertical_collision(self, paddle):
         x0_paddle = paddle.x - 30
@@ -254,27 +297,31 @@ class Ball:
         if (x0_paddle < self.x < x1_paddle) and \
                 ((y0_paddle < self.y + self.radius < y1_paddle) or
                  (y0_paddle < self.y - self.radius < y1_paddle)):
+            if self.vy > 0 and paddle.vy > 0:
+                self.vy = abs(self.vy) + abs(paddle.vy)
+            elif self.vy < 0 and paddle.vy < 0:
+                self.vy = -(abs(self.vy) + abs(paddle.vy))
+            else:
+                self.vy = -self.vy
             return True
 
         return False
 
     def bounce_horizontal(self):
-        self.vx = -self.vx
+        self.vx = -self.vx * 1.05
         if abs(self.vx) < 10:
             if self.vx > 0:
                 self.vx = 10
             else:
                 self.vx = -10
-        self.vy *= 1.05
 
     def bounce_vertical(self):
-        self.vy = -self.vy
+        self.vy = -self.vy * 1.05
         if abs(self.vy) < 10:
             if self.vy > 0:
                 self.vy = 10
             else:
                 self.vy = -10
-        self.vx *= 1.05
 
     def check_paddle_collision(self, paddle):
         x0_paddle = paddle.x - 30
@@ -304,13 +351,27 @@ class Ball:
 
     def reset_position(self):
         if self.x < 30:
-            self.x = 350
+            self.x = 450
             self.y = 250
+            self.p1.x = 30
+            self.p1.y = 250
+            self.p1.redraw()
+            self.p2.x = 870
+            self.p2.y = 250
+            self.p2.redraw()
+            self.vx = 2
+            self.vy = 2
         elif self.x > 870:
-            self.x = 550
+            self.x = 450
             self.y = 250
-        self.vx = -self.vx
-        self.vy = -self.vy
+            self.p1.x = 30
+            self.p1.y = 250
+            self.p1.redraw()
+            self.p2.x = 870
+            self.p2.y = 250
+            self.p2.redraw()
+            self.vx = -2
+            self.vy = 2
 
         self.canvas.delete("score")
         self.canvas.create_text(450, 50, text=f"{self.p1_score}     {self.p2_score}", tags="score",
