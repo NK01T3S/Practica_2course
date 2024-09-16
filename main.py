@@ -1,7 +1,7 @@
 from tkinter import *
 import random
 
-MAX_SPEED = 20
+MAX_SPEED = 15
 
 def setup_window(root):
     screen_width = root.winfo_screenwidth()
