@@ -1,7 +1,7 @@
 from tkinter import *
 import random
 
-MAX_SPEED = 20
+MAX_SPEED = 15
 
 def setup_window(root):
     screen_width = root.winfo_screenwidth()
@@ -15,13 +15,24 @@ def setup_window(root):
 class MeinMenu:
     def __init__(self):
         self.root = Tk()
-        self.root.title("MeinMenu")
-        self.play_button = Button(self.root, text="ИГРАТЬ", command=self.start_game, padx=80, pady=20)
-        self.play_button.pack(pady=50)
-        self.control_button = Button(self.root, text="УПРАВЛЕНИЕ", command=self.show_controls, padx=60, pady=20)
-        self.control_button.pack(pady=50)
-        self.exit_button = Button(self.root, text="ВЫХОД", command=self.exit_program, padx=80, pady=20)
-        self.exit_button.pack(pady=50)
+        self.root.title('Аэрохоккей')
+
+        self.canvas = Canvas(self.root, width=900, height=500)
+        self.canvas.pack()
+        self.canvas.create_rectangle(0, 0, 900, 500, fill="", outline="")
+        for i in range(500):
+            r = int(255 * (500 - i) / 500)
+            b = int(255 * i / 500)
+            self.canvas.create_line(0, i, 900, i, fill=f"#{r:02X}{0:02X}{b:02X}")
+
+        self.canvas.create_text(450, 100, text="Аэрохоккей", font=("Arial", 50), fill="White")
+        self.play_button = Button(self.canvas, text="ИГРАТЬ", command=self.start_game, padx=120, pady=20)
+        self.play_button.place(x=300, y=200)
+        self.control_button = Button(self.canvas, text="УПРАВЛЕНИЕ", command=self.show_controls, padx=105, pady=20)
+        self.control_button.place(x=300, y=300)
+        self.exit_button = Button(self.canvas, text="ВЫХОД", command=self.exit_program, padx=125, pady=20)
+        self.exit_button.place(x=300, y=400)
+
         setup_window(self.root)
         self.root.resizable(width=False, height=False)
         self.root.mainloop()
@@ -34,18 +45,25 @@ class MeinMenu:
 
     def show_controls(self):
         controls_window = Toplevel(self.root)
-        setup_window(controls_window)
-        controls_window.resizable(width=False, height=False)
         controls_window.title("Управление")
+        controls_canvas = Canvas(controls_window, width=900, height=500)
+        controls_canvas.pack()
+        controls_canvas.create_rectangle(0, 0, 900, 500, fill="", outline="")
+        for i in range(500):
+            r = int(255 * (500 - i) / 500)
+            b = int(255 * i / 500)
+            controls_canvas.create_line(0, i, 900, i, fill=f"#{r:02X}{0:02X}{b:02X}")
 
         controls_text = "Управление:\n\nИгрок 1:\nW - вверх\nS - вниз\nA - влево\nD - вправо\n\nИгрок 2:\nСтрелка вверх - вверх\nСтрелка вниз - вниз\nСтрелка влево - влево\nСтрелка вправо - вправо"
-        controls_label = Label(controls_window, text=controls_text, font=("Arial", 14))
-        controls_label.pack(padx=20, pady=20)
+        controls_label = Label(controls_window, text=controls_text, font=("Arial", 17), fg="black", bg="#FF0000")
+        controls_label.place(x=325, y=80)
 
-        controls_close_button = Button(controls_window, text="Закрыть",
+        controls_close_button = Button(controls_window, text="Закрыть", fg="black",
                                        command=lambda: [controls_window.destroy(), self.root.deiconify()])
-        controls_close_button.pack(pady=60)
+        controls_close_button.place(x=425, y=450)
 
+        setup_window(controls_window)
+        controls_window.resizable(width=False, height=False)
         self.root.withdraw()
 
     def exit_program(self):
@@ -113,15 +131,11 @@ class Playfield:
             self.p2.move_left()
         if self.pressed["Right"]:
             self.p2.move_right()
-
         self.ball.refresh()
-
         if self.ball.check_collision(self.p1):
             self.ball.touch(self.p1, self.pressed)
-
         if self.ball.check_collision(self.p2):
             self.ball.touch(self.p2, self.pressed)
-
         self.p1.redraw()
         self.p2.redraw()
         self.ball.redraw()
@@ -130,7 +144,6 @@ class Playfield:
         self.canvas.delete("score")
         self.canvas.create_text(450, 50, text=f"{self.ball.p1_score}     {self.ball.p2_score}", tags="score",
                                 fill="black", font=("Arial", 20))
-
         if self.ball.p1_score >= 10 or self.ball.p2_score >= 10:
             self.show_winner()
         else:
@@ -153,6 +166,7 @@ class Playfield:
             winner_text = "Игрок 1 победил!"
         else:
             winner_text = "Игрок 2 победил!"
+
         winner_label = Label(self.winner_window, text=winner_text, font=("Arial", 20))
         winner_label.pack(padx=20, pady=20)
         restart_button = Button(self.winner_window, text="Перезапуск", command=self.restart_game)
@@ -199,20 +213,20 @@ class Paddle:
         self.vy = 0
 
     def move_up(self):
-        self.y = max(self.y - 8, self.top_boundary)
-        self.vy = -8
+        self.y = max(self.y - 10, self.top_boundary)
+        self.vy = -10
 
     def move_down(self):
-        self.y = min(self.y + 8, self.bottom_boundary)
-        self.vy = 8
+        self.y = min(self.y + 10, self.bottom_boundary)
+        self.vy = 10
 
     def move_left(self):
-        self.x = max(self.x - 8, self.left_boundary)
-        self.vx = -8
+        self.x = max(self.x - 10, self.left_boundary)
+        self.vx = -10
 
     def move_right(self):
-        self.x = min(self.x + 8, self.right_boundary)
-        self.vx = 8
+        self.x = min(self.x + 10, self.right_boundary)
+        self.vx = 10
 
     def redraw(self):
         x0 = self.x - 30
@@ -233,12 +247,12 @@ class Ball:
         self.x = x
         self.y = y
         self.color = color
-        self.vx = 4 * random.choice((-1, 1))
+        self.vx = 6 * random.choice((-1, 1))
         self.vy = 6 * random.choice((-1, 1))
         self.radius = radius
         self.redraw()
         self.cushion = radius * 0.25
-        self.a = 0.95
+        self.a = 0.99
 
     def refresh(self):
         if self.vx > 0.25:
